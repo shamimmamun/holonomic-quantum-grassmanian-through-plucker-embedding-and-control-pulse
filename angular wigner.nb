@@ -1,0 +1,80 @@
+SphericalHarmonicYY[l_, m_, \[Theta]_, \[Phi]_] := 
+  Sqrt[4 Pi] SphericalHarmonicY[l, m, \[Theta], \[Phi]];
+Integrate[
+ Conjugate[
+   SphericalHarmonicYY[1, 1, \[Theta], \[Phi]]] SphericalHarmonicYY[1,
+    1, \[Theta], \[Phi]] Sin[\[Theta]]/(4 Pi), {\[Theta], 0, 
+  Pi}, {\[Phi], 0, 2 Pi}]
+
+phericalTensor[j_, l_, m_] := 
+  Quiet[Table[(-1)^(j - m1 - m) ClebschGordan[{j, m1}, {j, -m2}, {l, 
+       m}], {m1, j, -j, -1}, {m2, j, -j, -1}]];
+SphericalTensors[j_] := 
+  ArrayFlatten[
+   Table[SphericalTensor[j, l, m], {l, 0, 2 j}, {m, -l, l}], 1];
+MultipoleExpansion[O_] := 
+  With[{j = (Dimensions[O][[1]] - 1)/2}, 
+   Table[Table[
+     Tr[ConjugateTranspose[SphericalTensor[j, l, m]] . O], {m, -l, 
+      l}], {l, 0, 2*j}]];
+MultipoleReconstruction[MP_ ] := 
+  With[{j = (Sqrt[Length[ArrayFlatten[MP, 1]]] - 1)/2}, 
+   Sum[MP[[l + 1, m + l + 1]] SphericalTensor[j, l, m], {l, 0, 
+     2*j}, {m, -l, l}]];
+AngularWigner[O_] := 
+  Simplify[With[{j = (Dimensions[O][[1]] - 1)/2, 
+     MP = MultipoleExpansion[O]}, 
+    Sum[MP[[l + 1, m + l + 1]]*
+      SphericalHarmonicYY[l, m, \[Theta], \[Phi]], {l, 0, 
+      2*j}, {m, -l, l}]]];
+
+
+
+
+angularWignerInnerProduct[j_, WA_, WB_] := 
+  Integrate[
+   WA*WB*Sin[\[Theta]]/(4 Pi), {\[Theta], 0, Pi}, {\[Phi], 0, 2*Pi}];
+AngularWignerTrace[j_, W_] := 
+  Sqrt[(2*j + 1)] Integrate[
+    W*Sin[\[Theta]]/(4 Pi), {\[Theta], 0, Pi}, {\[Phi], 0, 2*Pi}];
+    
+    
+RandomRho[d_] := 
+  With[{V = Table[RandomComplex[{-1 - I, 1 + I}], {d}, {d}]}, 
+   With[{V2 = ConjugateTranspose[V] . V}, V2/Tr[V2]]];
+RandomHermitian[d_] := 
+ 1/2 ((a = Table[RandomComplex[], {d}, {d}]) + ConjugateTranspose[a])
+
+
+A = RandomRho[2];
+B = RandomRho[2];
+{Tr[A . B], 
+ AngularWignerInnerProduct[1, AngularWigner[A], AngularWigner[B]]}
+
+
+A = RandomHermitian[2];
+{Tr[A], AngularWignerTrace[1/2, AngularWigner[A]]}
+
+
+
+
+FancyAngularWigner[O_] := 
+  Simplify[With[{j = (Dimensions[O][[1]] - 1)/2, 
+     MP = MultipoleExpansion[O]}, 
+    Function[{\[Theta], \[Phi]}, 
+     Sum[MP[[l + 1, m + l + 1]]*
+       SphericalHarmonicYY[l, m, \[Theta], \[Phi]], {l, 0, 
+       2*j}, {m, -l, l}]]]];
+PlotAngularWigner[\[Rho]_] := 
+  With[{j = (Dimensions[\[Rho]][[1]] - 1)/2, 
+    f = FancyAngularWigner[\[Rho]]}, 
+   SphericalPlot3D[
+    j + f[\[Theta], \[Phi]], {\[Theta], 0, Pi}, {\[Phi], 0, 2 Pi}, 
+    ColorFunction -> 
+     Function[{x, y, z, \[Theta], \[Phi], r}, 
+      ColorData["SunsetColors"][
+       Rescale[f[\[Theta], \[Phi]], {-1, 2}]]], 
+    ColorFunctionScaling -> False, SphericalRegion -> True, 
+    RotationAction -> "Clip", MeshStyle -> Opacity[.3], 
+    PerformanceGoal -> "Quality", PlotRange -> Full, 
+    PlotLabel -> "Angular Wigner"]];
