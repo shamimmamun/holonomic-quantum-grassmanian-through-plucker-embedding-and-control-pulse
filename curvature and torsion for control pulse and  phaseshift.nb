@@ -1,0 +1,10 @@
+r1[t_] := Sqrt[2] Sin[Pi t] {0, Sin[Pi t /2]^2, Cos[Pi t /2]^2};
+q = 1.6054;
+r2[t_] := Sqrt[2] Sin[Pi t] {Sin[Pi t/2]^2, Cos[Pi t /2]^2, 0} . 
+    RotationMatrix[q, {0, 0, 1}];
+r[t_] := (1 - t) r1[t] + t r2[t];
+
+ParametricPlot3D[r[t], {t, 0, 1}]
+
+SS = FrenetSerretSystem[r[t], t];
+Plot[FSS[[1, 1]], {t, 0, 1}]
